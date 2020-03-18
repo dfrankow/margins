@@ -23,22 +23,6 @@ test_that("Test accuracy for glm()", {
     manual <- coef(x)[["wt"]] * p * (1-p)
     expect_equal(as.numeric(manual), as.numeric(m1[["dydx_wt"]]), tolerance = tol, label = "marginal effect is correct for logit glm()")
 })
-test_that("Test accuracy for ridge::linearRidge", {
-  # if lambda=0, then marginal effects should be the same as the coefficient
-  xr <- linearRidge(mpg ~ wt + cyl, data = mtcars, lambda=0)
-  m <- marginal_effects(xr)
-  expect_equal(coef(xr)[["wt"]], mean(m[["dydx_wt"]]),
-               tolerance = tol, label = "marginal effect is coefficient in lm()")
-
-  # if lambda > 0, the model shifts a bit
-  xr2 <- linearRidge(mpg ~ wt + cyl, data = mtcars, lambda=0.01)
-  m2 <- marginal_effects(xr2)
-  expect_equal(coef(xr2)[["wt"]], mean(m2[["dydx_wt"]]),
-               tolerance = tol, label = "marginal effect is coefficient in lm()")
-  # the two models aren't the same, but they're close
-  diff <- (coef(xr)[["wt"]] - coef(xr2)[["wt"]])
-  expect(diff < 0 && diff > -0.03, paste0("diff: ", diff))
-})
 test_that("Test margins for factor in lm()", {
   foo <- mtcars
   foo$cyl_factor <- as.factor(paste0("cyl", foo$cyl))
@@ -46,22 +30,41 @@ test_that("Test margins for factor in lm()", {
   expect_true(inherits(m <- margins(model1), "margins"),
               label = "margins works for lm with factor")
 })
-test_that("Test margins for factor in linearRidge()", {
-  foo <- mtcars
-  foo$cyl_factor <- as.factor(paste0("cyl", foo$cyl))
-  model1 <- linearRidge(mpg ~ wt + cyl_factor, data = foo, lambda = 0)
-  expect_true(inherits(m <- margins(model1), "margins"),
-              label = "margins works for lm with factor")
-})
-test_that("Test margins for linearRidge", {
-  # if lambda=0, then marginal effects should be the same as the coefficient
-  xr <- linearRidge(mpg ~ wt + cyl, data = mtcars, lambda=0)
-  expect_true(inherits(m <- margins(xr), "margins"), label = "margins works for linearRidge")
-})
 test_that("Test accuracy for loess()", {
     x <- loess(mpg ~ wt, data = mtcars)
     expect_true(inherits(m <- margins(x), "margins"), label = "margins works for loess()")
 })
+
+if (requireNamespace("ridge")) {
+  test_that("Test accuracy for ridge::linearRidge", {
+    # if lambda=0, then marginal effects should be the same as the coefficient
+    xr <- linearRidge(mpg ~ wt + cyl, data = mtcars, lambda=0)
+    m <- marginal_effects(xr)
+    expect_equal(coef(xr)[["wt"]], mean(m[["dydx_wt"]]),
+                 tolerance = tol, label = "marginal effect is coefficient in lm()")
+    
+    # if lambda > 0, the model shifts a bit
+    xr2 <- linearRidge(mpg ~ wt + cyl, data = mtcars, lambda=0.01)
+    m2 <- marginal_effects(xr2)
+    expect_equal(coef(xr2)[["wt"]], mean(m2[["dydx_wt"]]),
+                 tolerance = tol, label = "marginal effect is coefficient in lm()")
+    # the two models aren't the same, but they're close
+    diff <- (coef(xr)[["wt"]] - coef(xr2)[["wt"]])
+    expect(diff < 0 && diff > -0.03, paste0("diff: ", diff))
+  })
+  test_that("Test margins for factor in linearRidge()", {
+    foo <- mtcars
+    foo$cyl_factor <- as.factor(paste0("cyl", foo$cyl))
+    model1 <- linearRidge(mpg ~ wt + cyl_factor, data = foo, lambda = 0)
+    expect_true(inherits(m <- margins(model1), "margins"),
+                label = "margins works for lm with factor")
+  })
+  test_that("Test margins for linearRidge", {
+    # if lambda=0, then marginal effects should be the same as the coefficient
+    xr <- linearRidge(mpg ~ wt + cyl, data = mtcars, lambda=0)
+    expect_true(inherits(m <- margins(xr), "margins"), label = "margins works for linearRidge")
+  })
+}
 
 
 context("Test `build_datalist()` behavior")
