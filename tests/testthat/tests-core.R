@@ -39,6 +39,20 @@ test_that("Test accuracy for ridge::linearRidge", {
   diff <- (coef(xr)[["wt"]] - coef(xr2)[["wt"]])
   expect(diff < 0 && diff > -0.03, paste0("diff: ", diff))
 })
+test_that("Test margins for factor in lm()", {
+  foo <- mtcars
+  foo$cyl_factor <- as.factor(paste0("cyl", foo$cyl))
+  model1 <- lm(mpg ~ wt + cyl_factor, data = foo)
+  expect_true(inherits(m <- margins(model1), "margins"),
+              label = "margins works for lm with factor")
+})
+test_that("Test margins for factor in linearRidge()", {
+  foo <- mtcars
+  foo$cyl_factor <- as.factor(paste0("cyl", foo$cyl))
+  model1 <- linearRidge(mpg ~ wt + cyl_factor, data = foo, lambda = 0)
+  expect_true(inherits(m <- margins(model1), "margins"),
+              label = "margins works for lm with factor")
+})
 test_that("Test margins for linearRidge", {
   # if lambda=0, then marginal effects should be the same as the coefficient
   xr <- linearRidge(mpg ~ wt + cyl, data = mtcars, lambda=0)
