@@ -60,9 +60,16 @@ if (requireNamespace("ridge")) {
                 label = "margins works for lm with factor")
   })
   test_that("Test margins for linearRidge", {
-    # if lambda=0, then marginal effects should be the same as the coefficient
-    xr <- linearRidge(mpg ~ wt + cyl, data = mtcars, lambda=0)
-    expect_true(inherits(m <- margins(xr), "margins"), label = "margins works for linearRidge")
+    # if lambda=0, then marginal effects should be the same as for lm
+    model1 <- lm(mpg ~ wt + cyl, data = mtcars)
+    model2 <- linearRidge(mpg ~ wt + cyl, data = mtcars, lambda=0)
+    expect_true(inherits(m2 <- margins(model2), "margins"), label = "margins works for linearRidge")
+
+    m1 <- margins(model1)
+    s1 <- summary(m1)
+    s2 <- summary(m2)
+    # Currently fails:
+    expect_equal(s1, s2)
   })
 }
 
